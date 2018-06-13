@@ -1,0 +1,27 @@
+{
+  "name": "webserver",
+  "version": "1.0.0",
+  "description": "Proxy webserver for TunnelHunters",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TunnelHunters/webserver.git"
+  },
+  "author": "Bobby Martin & Alexan Topalian",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TunnelHunters/webserver/issues"
+  },
+  "homepage": "https://github.com/TunnelHunters/webserver#readme",
+  "devDependencies": {
+    "@types/socket.io-client": "^1.4.32",
+    "typescript": "^2.9.1"
+  },
+  "dependencies": {
+    "socket.io-client": "^2.1.1"
+  }
+}
