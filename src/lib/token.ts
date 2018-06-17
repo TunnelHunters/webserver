@@ -1,17 +1,40 @@
 export enum Type {
-	KEYPRESS = 'keyPress'
+	ERROR = 'error',
+	KEYPRESS = 'keyPress',
+	DOF = 'DOF'
 }
 
-class token {
+class Token {
     // assign vlaues from payload to this
 	constructor(public type: Type, payload: object) {
 		this.type = type;
 		Object.assign(this, payload);
 	}
+
+	stringify(): string {
+		return JSON.stringify(this);
+	}
 }
 
-export class keyPressToken extends token {
+export class KeyPressToken extends Token {
 	constructor(key: string, state: string) {
-		super(Type.KEYPRESS, {key: key, state: state});
+		super(Type.KEYPRESS, {
+			key: key,
+			state: state
+		});
+	}
+}
+export class ErrorToken extends Token {
+	constructor(message: string) {
+		super(Type.ERROR, {
+			message: message
+        });
+	}
+}
+export class DOFToken extends Token {
+	constructor(FB: number, rotate: number) {
+		super(Type.DOF, {
+			DOF: [FB, rotate]
+		});
 	}
 }

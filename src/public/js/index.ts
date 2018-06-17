@@ -1,4 +1,4 @@
-import { keyPressToken } from '../../lib/token';
+import { KeyPressToken } from '../../lib/token';
 import io from 'socket.io-client';
 
 // object that keeps track of keys being held down
@@ -26,7 +26,9 @@ document.addEventListener('keyup', event => {
 
 // sends a keyPress token to the webserver
 function sendArrowKey(event: KeyboardEvent, state: string): void {
-	const token: keyPressToken = new keyPressToken(event.key, state);
+	const token: KeyPressToken = new KeyPressToken(event.key, state);
 	console.debug(token);
 	socket.emit(token.type, token);
 }
+
+socket.on('message', console.log);

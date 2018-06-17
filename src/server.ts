@@ -1,10 +1,12 @@
-import path from 'path'
-import { Server } from 'http'
-import express from 'express'
-import socketio from 'socket.io'
-import RCM from './lib/robotConnectionManager'
-import { home } from './routes'
-import { Type } from './lib/token'
+import path from 'path';
+import { Server } from 'http';
+import { parse } from 'url';
+import express from 'express';
+import socketio from 'socket.io';
+import WebSocket from 'ws';
+import RCM from './lib/robotConnectionManager';
+import { home } from './routes';
+import {DOFToken, ErrorToken} from './lib/token';
 
 const app = express();
 const server = new Server(app);
@@ -22,16 +24,28 @@ app.use('/public', express.static(path.join(process.cwd(), 'dist', 'public')));
 app.use('/', home);
 
 socketioServer.on('connect', socket => {
-    console.log(`someone connected! botNum: ${socket.handshake.query.botNum}`);
-
-    socket.on('disconnect', (reason: string): void => {
-        console.log(`bot ${socket.handshake.query.botNum} disconnected with reason ${reason}`)
-    });
-    socket.on(Type.KEYPRESS, (data: object): void => {
-        console.log(data);
-        socket.emit('response', 'received');
-    });
+    console.log('Somebody (client) connected!');
+    const robotNum = Number(socket.handshake.query.botNum);
+    try {
+        robotConnections[robotNum].clientConnect(socket);
+    }
+    catch(error) {
+        if (error === 'noRobot')
+            socket.write(new ErrorToken(`Robot ${robotNum} not available`));
+        else if (error === 'alreadyPosessed')
+            socket.write(new ErrorToken(`Robot ${robotNum} is alredy posessed`));
+        else
+            throw error;
+    }
 });
 
 server.listen(80);
-console.log(robotConnections[1].robotIsConnected());
+
+const websocketServer = new WebSocket.Server({ port: 8080 });
+
+websocketServer.on('connection', (socket, request) => {
+    console.log('Somebody (robot) connected!');
+    const robotNum = Number(parse(request.url, true).query.robot_num);
+    robotConnections[robotNum].robotConnect(socket);
+    socket.send(new DOFToken(1, 0).stringify());
+});
