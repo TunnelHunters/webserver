@@ -39,7 +39,7 @@ socketioServer.on('connect', socket => {
     }
 });
 
-server.listen(80);
+server.listen(8000);
 
 const websocketServer = new WebSocket.Server({ port: 8080 });
 
