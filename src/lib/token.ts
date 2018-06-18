@@ -17,6 +17,9 @@ class Token {
 }
 
 export class KeyPressToken extends Token {
+	key: string;
+	state: string;
+
 	constructor(key: string, state: string) {
 		super(Type.KEYPRESS, {
 			key: key,

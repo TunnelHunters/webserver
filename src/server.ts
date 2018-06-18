@@ -6,7 +6,7 @@ import socketio from 'socket.io';
 import WebSocket from 'ws';
 import RCM from './lib/robotConnectionManager';
 import { home } from './routes';
-import {DOFToken, ErrorToken} from './lib/token';
+import { ErrorToken } from './lib/token';
 
 const app = express();
 const server = new Server(app);
@@ -40,12 +40,10 @@ socketioServer.on('connect', socket => {
 });
 
 server.listen(8000);
-
 const websocketServer = new WebSocket.Server({ port: 8080 });
 
 websocketServer.on('connection', (socket, request) => {
     console.log('Somebody (robot) connected!');
     const robotNum = Number(parse(request.url, true).query.robot_num);
     robotConnections[robotNum].robotConnect(socket);
-    socket.send(new DOFToken(1, 0).stringify());
 });
