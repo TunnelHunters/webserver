@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 import socketio from 'socket.io'
-import {Type, DOFToken, KeyPressToken} from './token';
+import { Type, DOFToken, KeyPressToken } from './token';
 
 export default class robotConnectionManager {
 
@@ -34,8 +34,8 @@ export default class robotConnectionManager {
     private onKeyPress(data: KeyPressToken) {
         this.keys[data.key] = data.state === 'down' ? 1 : 0;
         this.robotSocket.send(new DOFToken(
-            this.keys.ArrowRight - this.keys.ArrowLeft,
-            this.keys.ArrowUp - this.keys.ArrowDown
+            this.keys.ArrowUp - this.keys.ArrowDown,
+            this.keys.ArrowRight - this.keys.ArrowLeft
         ).stringify());
     }
 
