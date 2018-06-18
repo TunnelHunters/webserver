@@ -5,7 +5,15 @@ const source = require('vinyl-source-stream');
 const ts = require('gulp-typescript');
 const tsproject = ts.createProject('tsconfig.json');
 
-gulp.task('make-bundle', () => {
+gulp.task('copy-assets', () => {
+    return gulp.src([
+        'src/public/**/*',
+        '!src/public/js'
+    ])
+        .pipe(gulp.dest('dist/public'));
+});
+
+gulp.task('make-bundle', ['copy-assets'], () => {
     return browserify({
         basedir: '.',
         debug: true,
