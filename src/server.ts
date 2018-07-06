@@ -52,6 +52,6 @@ websocketServer.on('connection', (socket, request) => {
 
 // VIDEO TCP SOCKET STUFF
 const tcpSocketServer = createServer(socket => {
-    console.log(`Somebody connected! Their address is: ${socket.address()}`);
+    console.log(`Somebody connected! Their address is: ${JSON.stringify(socket.address())}`);
 });
 tcpSocketServer.listen(8081);
