@@ -5,6 +5,8 @@ body {
   min-height: 100%;
   margin: 0;
   background-image: url("/public/images/tunnel.jpg");
+  display: grid;
+  grid-template: 1fr auto 1fr / 1fr auto 1fr;
 }
 body:after {
   content: '';
@@ -12,12 +14,16 @@ body:after {
   top: 0; left: 0; bottom: 0; right: 0;
   background: radial-gradient(ellipse, transparent 15%, black 70%);
 }
+#center {
+  grid-area: 2 / 2 / 2 / 2;
+}
+#center > * {
+  display: block;
+  margin: auto auto 50px;
+}
+#video {
+  background-color: black;
+}
 #logo {
-  position: absolute;
-  margin: auto;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   filter: drop-shadow(0 0 20px);
 }

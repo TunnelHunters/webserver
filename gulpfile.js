@@ -27,7 +27,7 @@ gulp.task('make-bundle', ['copy-assets'], () => {
 
 gulp.task('make-express', () => {
     return tsproject.src()
-        .pipe(tsproject()).js
+        .pipe(tsproject())
         .pipe(gulp.dest('dist'))
 });
 
