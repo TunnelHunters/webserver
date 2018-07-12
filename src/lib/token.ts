@@ -1,5 +1,4 @@
 export enum Type {
-	ERROR = 'error',
 	KEYPRESS = 'keyPress',
 	DOF = 'DOF'
 }
@@ -25,13 +24,6 @@ export class KeyPressToken extends Token {
 			key: key,
 			state: state
 		});
-	}
-}
-export class ErrorToken extends Token {
-	constructor(message: string) {
-		super(Type.ERROR, {
-			message: message
-        });
 	}
 }
 export class DOFToken extends Token {

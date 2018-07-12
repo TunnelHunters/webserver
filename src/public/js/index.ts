@@ -1,8 +1,9 @@
+import $ from 'jquery';
 import { KeyPressToken } from '../../lib/token';
-import io from 'socket.io-client';
+import SocketIOClient from 'socket.io-client';
 
 // object that keeps track of keys being held down
-const socket = io({
+const socket = SocketIOClient('/client', {
 	query: { botNum: 1 }
 });
 const keyMap: { [key: string]: boolean } = {};
@@ -31,4 +32,9 @@ function sendArrowKey(event: KeyboardEvent, state: string): void {
 	socket.emit(token.type, token);
 }
 
-socket.on('message', console.log);
+socket.on('connect', () => console.debug('connected to webserver!!'));
+socket.on('message', console.debug);
+socket.on('frame', (frame: ArrayBuffer) => {
+	const thing = URL.createObjectURL(new Blob([ new Uint8Array(frame) ], {type: 'image/jpeg'}));
+	$('#video').attr('src', thing)
+});

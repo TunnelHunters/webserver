@@ -1,12 +1,9 @@
 import path from 'path';
-import { Server } from 'http';
-import { parse } from 'url';
+import { Server } from 'http'
 import express from 'express';
-import socketio from 'socket.io';
-import WebSocket from 'ws';
+import SocketIOServer from 'socket.io';
 import RCM from './lib/robotConnectionManager';
 import { home } from './routes';
-import { ErrorToken } from './lib/token';
 
 // holds connections to webpage, robot and video streams, and sets up listeners
 let robotConnections: { [key: number]: RCM } = {
@@ -21,30 +18,46 @@ const expressApp = express();
 expressApp.use('/public', express.static(path.join(process.cwd(), 'dist', 'public')));
 expressApp.use('/', home);
 
-// HTTP SERVER AND SOCKETIO STUFF
+// HTTP/SOCKETIO SERVER
 const httpServer = new Server(expressApp);
-const socketioServer = socketio(httpServer);
-socketioServer.on('connect', socket => {
+const socketIOServer = SocketIOServer(httpServer);
+
+// CLIENT SOCKET STUFF
+const clientSocketServer = socketIOServer.of('/client');
+clientSocketServer.on('connect', socket => {
     console.log('Somebody (client) connected!');
     const robotNum = Number(socket.handshake.query.botNum);
     try {
         robotConnections[robotNum].clientConnect(socket);
     }
     catch(error) {
-        if (error === 'noRobot')
-            socket.write(new ErrorToken(`Robot ${robotNum} not available`));
-        else if (error === 'alreadyPosessed')
-            socket.write(new ErrorToken(`Robot ${robotNum} is alredy posessed`));
-        else
-            throw error;
+        if (error === 'noRobot') {
+            console.error(`Client tried to posess robot ${robotNum}, robot ${robotNum} is not available`);
+            return socket.emit('THZ_error', `Robot ${robotNum} not available`);
+        }
+        else if (error === 'alreadyPosessed') {
+            console.error(`Client tried to posess robot ${robotNum}, robot ${robotNum} is already posessed`);
+            return socket.emit('THZ_error', `Robot ${robotNum} is alredy posessed`);
+        }
+        throw error;
     }
 });
-httpServer.listen(8000);
 
-// ROBOT WS STUFF
-const websocketServer = new WebSocket.Server({ port: 8080 });
-websocketServer.on('connection', (socket, request) => {
+// ROBOT SOCKET STUFF
+const robotSocketServer = socketIOServer.of('/robot');
+robotSocketServer.on('connection', socket => {
     console.log('Somebody (robot) connected!');
-    const robotNum = Number(parse(request.url, true).query.robot_num);
-    robotConnections[robotNum].robotConnect(socket);
+    const robotNum = Number(socket.handshake.query.botNum);
+    try {
+        robotConnections[robotNum].robotConnect(socket);
+    }
+    catch(error) {
+        if (error === 'robotAlreadyConnected') {
+            console.error(`Something tried connecting as robot ${robotNum} but robot ${robotNum} already connected`);
+            return socket.emit('THZ_error', 'Somebody got you beat, pally');
+        }
+        throw error
+    }
 });
+
+httpServer.listen(8000);
