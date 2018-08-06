@@ -1,11 +1,14 @@
+import { Socket as TCPSocket } from 'net';
+import { Response } from 'express';
 import { Socket } from 'socket.io'
 import { Type, DOFToken, KeyPressToken } from './token';
 
 export default class robotConnectionManager {
 
     private robotSocket: Socket;
-    private robotVideoControlSocket: Socket;
+    private videoControlSocket: Socket;
     private clientSocket: Socket;
+    private clientVideoResponse: Response;
     private keys: { [key: string]: number } = {
         ArrowUp: 0,
         ArrowDown: 0,
@@ -39,8 +42,7 @@ export default class robotConnectionManager {
         this.robotSocket = socket;
         console.log(`Robot ${this.robotNum} connected.`);
     }
-
-    videoConnect(socket: Socket): void {
+    videoControlConnect(socket: Socket): void {
         if (this.videoIsConnected) {
             console.error(`Robot ${this.robotNum}'s video control socket is already connected`);
             socket.emit('Another video control socket from the same robot is connected');
@@ -49,23 +51,30 @@ export default class robotConnectionManager {
 
         // listeners
         socket.on('disconnect', this.onVideoDisconnect.bind(this));
-        socket.emit('start_video');
 
         // store socket in object
-        this.robotVideoControlSocket = socket;
+        this.videoControlSocket = socket;
         console.log(`Video control socket from robot ${this.robotNum} connected`);
     }
+    videoStreamConnect(socket: TCPSocket): void {
+        console.log(`Video stream from robot ${this.robotNum} connected`);
 
+        // Tell the video slave to let that shit rip
+        socket.write('OK');
+
+        socket.on('data', data => console.log(data.length));
+        socket.pipe(this.clientVideoResponse);
+    }
     /**
      * When the client connects and wants to posess this robot
      * @param {SocketIO.Socket} socket - the Socket.io socket connected to the client
      */
     clientConnect(socket: Socket): void {
-        if (!this.robotIsConnected) {
-            console.error(`Client tried to posess robot ${this.robotNum}, robot ${this.robotNum} is not available`);
-            socket.emit('THZ_error', `Robot ${this.robotNum} not available`);
-            return;
-        }
+        // if (!this.robotIsConnected) {
+        //     console.error(`Client tried to posess robot ${this.robotNum}, robot ${this.robotNum} is not available`);
+        //     socket.emit('THZ_error', `Robot ${this.robotNum} not available`);
+        //     return;
+        // }
         if (this.clientIsConnected) {
             console.error(`Client tried to posess robot ${this.robotNum}, robot ${this.robotNum} is already posessed`);
             socket.emit('THZ_error', `Robot ${this.robotNum} is alredy posessed`);
@@ -83,6 +92,12 @@ export default class robotConnectionManager {
         this.clientSocket = socket;
         console.log(`Client posessed robot ${this.robotNum}.`);
     }
+    clientVideoConnect(res: Response): void {
+        console.log(`Client asked for video from robot ${this.robotNum}`);
+        res.setHeader('Transfer-Encoding', 'chunked');
+        this.clientVideoResponse = res;
+        this.sendToVideoSlave('start_video');
+    }
 
     private sendToRobot(event: string, payload?: object): void {
         if (!this.robotIsConnected)
@@ -90,12 +105,20 @@ export default class robotConnectionManager {
 
         this.robotSocket.emit(event, payload);
     }
-
     private sendToClient(event: string, payload?: object): void {
         if (!this.clientIsConnected)
             return console.error(`Client not connected, event ${event} rejected.`);
 
         this.clientSocket.emit(event, payload);
+    }
+    private sendToVideoSlave(event: string, payload?: object): void {
+        if (!this.videoIsConnected)
+            return console.error(`Video slave not connected, event ${event} rejected.`);
+
+        if (payload)
+            this.videoControlSocket.emit(event, payload);
+        else
+            this.videoControlSocket.emit(event);
     }
 
     private onKeyPress(data: KeyPressToken) {
@@ -111,7 +134,7 @@ export default class robotConnectionManager {
         console.log(`Robot ${this.robotNum} disconnected because ${reason}.`);
     }
     private onVideoDisconnect(reason: string) {
-        this.robotVideoControlSocket = undefined;
+        this.videoControlSocket = undefined;
         console.log(`Video control socket from robot ${this.robotNum} disconnected because ${reason}`);
     }
     private onClientDisconnect(reason: string) {
@@ -119,13 +142,17 @@ export default class robotConnectionManager {
         console.log(`Client posessing robot ${this.robotNum} disconnected because ${reason}`);
     }
 
+    get robotIsAvailable(): boolean {
+        return this.robotIsConnected && this.videoIsConnected;
+    }
+
     private get robotIsConnected(): boolean {
         return this.robotSocket !== undefined
             && this.robotSocket.connected;
     }
     private get videoIsConnected(): boolean {
-        return this.robotVideoControlSocket !== undefined
-            && this.robotVideoControlSocket.connected;
+        return this.videoControlSocket !== undefined
+            && this.videoControlSocket.connected;
     }
     private get clientIsConnected(): boolean {
         return this.clientSocket !== undefined

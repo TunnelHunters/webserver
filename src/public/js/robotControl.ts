@@ -1,11 +1,11 @@
-import $ from 'jquery';
 import { KeyPressToken } from '../../lib/token';
 import SocketIOClient from 'socket.io-client';
+import $ from 'jquery';
+const jsmpeg = require('jsmpeg');
 
 // object that keeps track of keys being held down
-const socket = SocketIOClient('/client', {
-	query: { botNum: 1 }
-});
+const websocket = new WebSocket(`ws://${window.location.hostname}:8000/client/video?botNum=1`);
+websocket.onmessage = () => console.log('I GOT SOME SHIT');
 const keyMap: { [key: string]: boolean } = {};
 const keyFunctionMap: { [key: string]: (event: KeyboardEvent, state: string) => void } = {
 	ArrowLeft: sendArrowKey,
@@ -13,6 +13,11 @@ const keyFunctionMap: { [key: string]: (event: KeyboardEvent, state: string) => 
 	ArrowUp: sendArrowKey,
 	ArrowDown: sendArrowKey
 };
+let player;
+
+$(window).on('load', () => {
+	player = new jsmpeg(websocket, { canvas: $('#videoCanvas') });
+});
 
 // actual key press listeners
 document.addEventListener('keydown', event => {
@@ -32,9 +37,6 @@ function sendArrowKey(event: KeyboardEvent, state: string): void {
 	socket.emit(token.type, token);
 }
 
+const socket = SocketIOClient('/client', { query: { botNum: 1 } });
 socket.on('connect', () => console.debug('connected to webserver!!'));
 socket.on('message', console.debug);
-socket.on('frame', (frame: ArrayBuffer) => {
-	const thing = URL.createObjectURL(new Blob([ new Uint8Array(frame) ], {type: 'image/jpeg'}));
-	$('#video').attr('src', thing)
-});
